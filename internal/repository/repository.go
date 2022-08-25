@@ -20,38 +20,38 @@ func New(db *sql.DB) *Repository {
 }
 
 // AddFileID adds file id to the database.
-func (r *Repository) AddFileID(fileID, entryID string) error {
+func (r *Repository) AddFileID(fileID string) (string, error) {
 	var id string
 
 	sql, _, _ := squirrel.
 		Insert("files").
-		Columns("entry_id", "file_id").
-		Values(fileID, entryID).
+		Columns("file_id").
+		Values(fileID).
 		Suffix("RETURNING id;").
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 
-	err := r.db.QueryRow(sql, entryID, fileID).Scan(&id)
+	err := r.db.QueryRow(sql, fileID).Scan(&id)
 	if err != nil {
-		return fmt.Errorf("cannot save file id: %w", err)
+		return "", fmt.Errorf("cannot save file id: %w", err)
 	}
 
-	return nil
+	return id, nil
 }
 
 // SaveEntry adds particular entry to the database.
-func (r *Repository) SaveEntry(copyright, date, explanation, hdURL, mediaType, serviceVersion, title, url string) (string, error) {
+func (r *Repository) SaveEntry(copyright, date, explanation, hdURL, mediaType, serviceVersion, title, url, fileID string) (string, error) {
 	var id string
 
 	sql, _, _ := squirrel.
 		Insert("entries").
-		Columns("copyright", "date", "explanation", "hd_url", "media_type", "service_version", "title", "url").
-		Values(copyright, date, explanation, hdURL, mediaType, serviceVersion, title, url).
+		Columns("file_id", "copyright", "date", "explanation", "hd_url", "media_type", "service_version", "title", "url").
+		Values(fileID, copyright, date, explanation, hdURL, mediaType, serviceVersion, title, url).
 		Suffix("RETURNING id;").
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 
-	err := r.db.QueryRow(sql, copyright, date, explanation, hdURL, mediaType, serviceVersion, title, url).Scan(&id)
+	err := r.db.QueryRow(sql, fileID, copyright, date, explanation, hdURL, mediaType, serviceVersion, title, url).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("cannot save entry: %w", err)
 	}
@@ -62,6 +62,7 @@ func (r *Repository) SaveEntry(copyright, date, explanation, hdURL, mediaType, s
 // Entry represents an entry in the form in which it's stored in the database.
 type Entry struct {
 	ID             string `json:"id"`
+	FileID         string `json:"file_id"`
 	Copyright      string `json:"copyright"`
 	Date           string `json:"date"`
 	Explanation    string `json:"explanation"`

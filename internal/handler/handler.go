@@ -66,12 +66,6 @@ func (s *Server) GetImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entryID, err := s.service.SaveEntry(entry)
-	if err != nil {
-		sendResponse(w, messageResponse{Message: "unable to save entry: %w" + err.Error()}, http.StatusInternalServerError)
-		return
-	}
-
 	img, err := http.Get(entry.URL)
 	if err != nil {
 		sendResponse(w, messageResponse{Message: "unable to get image: " + err.Error()}, http.StatusInternalServerError)
@@ -79,13 +73,19 @@ func (s *Server) GetImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer img.Body.Close()
 
-	err = s.service.SaveImage(img.Body, entryID)
+	fileID, err := s.service.SaveImage(img.Body)
 	if err != nil {
 		sendResponse(w, messageResponse{Message: "unable to save image: " + err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	sendResponse(w, messageResponse{Message: "picture has been downloaded"}, http.StatusOK)
+	id, err := s.service.SaveEntry(entry, fileID)
+	if err != nil {
+		sendResponse(w, messageResponse{Message: "unable to save entry: %w" + err.Error()}, http.StatusInternalServerError)
+		return
+	}
+
+	sendResponse(w, messageResponse{Message: "picture has been downloaded, entry id " + id}, http.StatusOK)
 }
 
 // GetEntries handles request for getting entries.

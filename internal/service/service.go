@@ -25,9 +25,9 @@ type Entry struct {
 
 // APOD an interface for manipulating with images and entries.
 type APOD interface {
-	SaveImage(file io.ReadCloser, entryID string) error
+	SaveImage(file io.ReadCloser) (string, error)
 	GetEntries(date string) ([]repository.Entry, error)
-	SaveEntry(entry Entry) (string, error)
+	SaveEntry(entry Entry, fileID string) (string, error)
 }
 
 // PhotoService a type that implements APOD interface.
@@ -45,7 +45,7 @@ func New(repo *repository.Repository, storage *storage.S3) *PhotoService {
 }
 
 // SaveEntry does all actions for adding entry to the database.
-func (s *PhotoService) SaveEntry(e Entry) (string, error) {
+func (s *PhotoService) SaveEntry(e Entry, fileID string) (string, error) {
 	id, err := s.repo.SaveEntry(
 		e.Copyright,
 		e.Date,
@@ -55,6 +55,7 @@ func (s *PhotoService) SaveEntry(e Entry) (string, error) {
 		e.ServiceVersion,
 		e.Title,
 		e.URL,
+		fileID,
 	)
 	if err != nil {
 		return "", fmt.Errorf("unable to save entry: %w", err)
@@ -64,26 +65,26 @@ func (s *PhotoService) SaveEntry(e Entry) (string, error) {
 }
 
 // SaveImage handle input file and add it to the database.
-func (s *PhotoService) SaveImage(file io.ReadCloser, entryID string) error {
-	fileID := uuid.NewRandom().String() + ".jpg"
-	filePath := "./source/" + fileID
+func (s *PhotoService) SaveImage(file io.ReadCloser) (string, error) {
+	fileID := uuid.NewRandom().String()
+	filePath := "./source/" + fileID + ".jpg"
 
 	fileBuffer, err := getFileBytes(file, filePath)
 	if err != nil {
-		return fmt.Errorf("unable to get file bytes: %w", err)
+		return "", fmt.Errorf("unable to get file bytes: %w", err)
 	}
 
 	err = s.s3.Upload(bytes.NewReader(fileBuffer), fileID)
 	if err != nil {
-		return fmt.Errorf("failed to load file to object storage: %w", err)
+		return "", fmt.Errorf("failed to load file to object storage: %w", err)
 	}
 
-	err = s.repo.AddFileID(fileID, entryID)
+	id, err := s.repo.AddFileID(fileID)
 	if err != nil {
-		return fmt.Errorf("cannot add file id to the database: %w", err)
+		return "", fmt.Errorf("cannot add file id to the database: %w", err)
 	}
 
-	return nil
+	return id, nil
 }
 
 func getFileBytes(file io.ReadCloser, filePath string) ([]byte, error) {

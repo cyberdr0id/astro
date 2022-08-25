@@ -5,4 +5,4 @@ db:
 image:
 	docker build -t apod .
 
-.PHONY: run
+.PHONY: run db image
