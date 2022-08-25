@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: apod-psql
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Server1
+      - POSTGRES_DB=apod
+    ports:
+        - "5432:5432"
+    volumes:
+      - ./scripts/main.sql:/docker-entrypoint-initdb.d/main.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5    
+      

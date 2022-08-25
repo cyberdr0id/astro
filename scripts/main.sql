@@ -1,0 +1,28 @@
+SELECT 'CREATE DATABASE apod'
+WHERE NOT EXISTS(SELECT FROM PG_DATABASE WHERE DATNAME = 'apod');
+\gexec
+
+CREATE TABLE IF NOT EXISTS files(
+    id SERIAL PRIMARY KEY,
+    file_id VARCHAR,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS entries(
+    id SERIAL PRIMARY KEY,
+    file_id INT,
+    copyright VARCHAR,
+    date VARCHAR,
+    explanation VARCHAR,
+    hd_url VARCHAR,
+    media_type VARCHAR,
+    service_version VARCHAR,
+    title VARCHAR,
+    url VARCHAR,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fkFileID
+		FOREIGN KEY(file_id)
+			REFERENCES files(id)
+);
