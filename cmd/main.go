@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/cyberdr0id/astro/internal/handler"
 	"github.com/cyberdr0id/astro/internal/repository"
@@ -27,8 +28,9 @@ func main() {
 
 	s := handler.NewServer(service)
 
-	if os.Getenv("APP_PORT") == "" {
-		log.Fatal("empty application port")
+	_, err = strconv.Atoi(os.Getenv("APP_PORT"))
+	if err != nil {
+		log.Fatal("invalid application port")
 	}
 
 	if err := http.ListenAndServe(":"+os.Getenv("APP_PORT"), s); err != nil {
