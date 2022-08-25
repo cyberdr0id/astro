@@ -80,8 +80,9 @@ func (r *Repository) GetEntries(date string) ([]Entry, error) {
 	var entries []Entry
 
 	query := squirrel.
-		Select("id, copyright, date, explanation, hd_url, media_type, service_version, title, url, created, updated").
+		Select("entries.id, files.file_id, copyright, date, explanation, hd_url, media_type, service_version, title, url, entries.created, entries.updated").
 		From("entries").
+		Join("files ON entries.file_id = files.id").
 		PlaceholderFormat(squirrel.Dollar)
 
 	if date != "" {
@@ -100,6 +101,7 @@ func (r *Repository) GetEntries(date string) ([]Entry, error) {
 
 		if err := rows.Scan(
 			&entry.ID,
+			&entry.FileID,
 			&entry.Copyright,
 			&entry.Date,
 			&entry.Explanation,
