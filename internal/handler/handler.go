@@ -49,7 +49,7 @@ func (s *Server) GetImage(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := c.Do(req)
 	if err != nil {
-		sendResponse(w, messageResponse{Message: "unable to call APOD: " + err.Error()}, http.StatusInternalServerError)
+		sendResponse(w, messageResponse{Message: "unable to call APOD: " + err.Error()}, http.StatusServiceUnavailable)
 		return
 	}
 	defer resp.Body.Close()
@@ -62,13 +62,13 @@ func (s *Server) GetImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if entry.MediaType != "image" {
-		sendResponse(w, messageResponse{Message: "unsupported media type"}, http.StatusBadRequest)
+		sendResponse(w, messageResponse{Message: "unsupported media type"}, http.StatusUnsupportedMediaType)
 		return
 	}
 
 	img, err := http.Get(entry.URL)
 	if err != nil {
-		sendResponse(w, messageResponse{Message: "unable to get image: " + err.Error()}, http.StatusInternalServerError)
+		sendResponse(w, messageResponse{Message: "unable to get image: " + err.Error()}, http.StatusServiceUnavailable)
 		return
 	}
 	defer img.Body.Close()
@@ -101,7 +101,7 @@ func (s *Server) GetEntries(w http.ResponseWriter, r *http.Request) {
 
 	entries, err := s.service.GetEntries(date)
 	if err != nil {
-		sendResponse(w, messageResponse{Message: "unable to retrieve entries from the database: " + err.Error()}, http.StatusBadRequest)
+		sendResponse(w, messageResponse{Message: "unable to retrieve entries from the database: " + err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
